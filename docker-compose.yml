@@ -1,0 +1,69 @@
+version: "3"
+
+networks:
+  local-network:
+    driver: bridge
+
+volumes:
+  poing-storage:
+    external: false
+
+services:
+  # openssl: 
+  #   build:
+  #     context: ./openssl
+  #     args:
+  #       - DOMAIN=localhost.com
+  #   volumes:
+  #     - poing-storage:/etc/letsencrypt/
+
+  certbot:
+    image: certbot/certbot:latest
+    command: certonly --webroot --agree-tos --no-eff-email --email poin.botg@gmail.com -d poing.tk
+    volumes:
+      - poing-storage/data/certbot/letsencrypt:/etc/letsencrypt
+      - poing-storage/data/certbot/letsencrypts:/etc/letsencrypts
+      - poing-storage/data/certbot/lib:/var/lib/letsencrypt
+
+  nginx:
+    depends_on:
+      - certbot
+    build:
+      context: ./nginx
+      args:
+        - NGINX_VERSION=1.23.1
+        - BASE_VOLUME_PATH=poing-storage
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - poing-storage:/etc/letsencrypt
+      - ./nginx/configs/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - local-network
+    links:
+      - poing-api
+      - poing-web
+
+  local-redis:
+    image: redis:alpine
+    networks:
+      - local-network
+    volumes:
+      - poing-storage:/data
+
+  poing-api:
+    build: ../poing-api
+    image: poing-api
+    networks:
+      - local-network
+    depends_on:
+      - local-redis
+    links:
+      - local-redis
+
+  poing-web:
+    build: ../poing-web
+    image: poing-web
+    networks:
+      - local-network
