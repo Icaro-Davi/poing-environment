@@ -1,7 +1,6 @@
 FROM ubuntu
 
 ARG NGINX_VERSION
-ARG BASE_VOLUME_PATH
 
 RUN apt-get update --fix-missing
 RUN apt-get install -y \
@@ -31,7 +30,5 @@ RUN ./configure \
     --with-http_ssl_module \
     --without-http_autoindex_module && \
     make && make install
-
-# VOLUME [ "/etc/letsencrypt" ]
 
 CMD [ "nginx", "-g", "daemon off;" ]

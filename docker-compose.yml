@@ -1,4 +1,4 @@
-version: "3"
+version: "3.9"
 
 networks:
   local-network:
@@ -17,22 +17,24 @@ services:
   #   volumes:
   #     - poing-storage:/etc/letsencrypt/
 
-  certbot:
-    image: certbot/certbot:latest
-    command: certonly --webroot --agree-tos --no-eff-email --email poin.botg@gmail.com -d poing.tk
-    volumes:
-      - poing-storage/data/certbot/letsencrypt:/etc/letsencrypt
-      - poing-storage/data/certbot/letsencrypts:/etc/letsencrypts
-      - poing-storage/data/certbot/lib:/var/lib/letsencrypt
+  # certbot:
+  #   image: certbot/certbot:latest
+  #   command: certonly --webroot --agree-tos --no-eff-email --email poin.botg@gmail.com -d poing.tk
+  #   volumes:
+  #     - poing-storage/data/certbot/letsencrypt:/etc/letsencrypt
+  #     - poing-storage/data/certbot/letsencrypts:/etc/letsencrypts
+  #     - poing-storage/data/certbot/lib:/var/lib/letsencrypt
 
   nginx:
-    depends_on:
-      - certbot
+    # depends_on:
+    #   - openssl
     build:
       context: ./nginx
       args:
         - NGINX_VERSION=1.23.1
-        - BASE_VOLUME_PATH=poing-storage
+    image: poingbot/image:nginx_1.0.0
+    environment:
+      - NGINX_VERSION=
     ports:
       - 80:80
       - 443:443
@@ -53,17 +55,17 @@ services:
       - poing-storage:/data
 
   poing-api:
-    build: ../poing-api
-    image: poing-api
-    networks:
-      - local-network
     depends_on:
       - local-redis
+    build: ../poing-api
+    image: poingbot/image:api_1.0.0
+    networks:
+      - local-network
     links:
       - local-redis
 
   poing-web:
     build: ../poing-web
-    image: poing-web
+    image: poingbot/image:web_1.0.0
     networks:
       - local-network
